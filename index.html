@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maison 3D — SweetHome3D Example 15</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500&family=Nunito:wght@300;400;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#060a10;font-family:'Nunito',sans-serif;color:#ddd6c8}
+#app{position:fixed;inset:0}
+canvas{display:block;width:100%!important;height:100%!important;cursor:grab}
+canvas:active{cursor:grabbing}
+.glass{background:rgba(6,10,16,.88);backdrop-filter:blur(26px) saturate(1.3);border:1px solid rgba(195,160,75,.15);border-radius:14px}
+#header{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 32px 8px;text-align:center;white-space:nowrap;pointer-events:none;z-index:20}
+#header h1{font-family:'Playfair Display',serif;font-size:1.45rem;color:#c8a448;letter-spacing:.04em;font-weight:700}
+#header p{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:rgba(175,150,95,.38);margin-top:3px;letter-spacing:.14em}
+#ftabs{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:4px;padding:5px 5px;z-index:20}
+.ftab{padding:7px 17px;background:transparent;border:1px solid rgba(195,160,75,.2);border-radius:10px;color:rgba(195,160,75,.42);font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.07em;cursor:pointer;transition:all .2s}
+.ftab:hover,.ftab.on{border-color:#c8a448;color:#c8a448;background:rgba(195,160,75,.08)}
+.ftab .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
+#legend{position:fixed;top:50%;left:16px;transform:translateY(-50%);padding:16px 14px;min-width:196px;z-index:20;max-height:84vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(195,160,75,.18) transparent}
+#legend::-webkit-scrollbar{width:3px}
+#legend::-webkit-scrollbar-thumb{background:rgba(195,160,75,.18);border-radius:2px}
+#legend h3{font-family:'Playfair Display',serif;font-size:.9rem;color:#c8a448;margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid rgba(195,160,75,.1)}
+#legend h3 small{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:rgba(195,160,75,.35);margin-left:5px}
+.li{display:flex;align-items:center;gap:7px;margin-bottom:4px;padding:5px 6px;border-radius:8px;cursor:pointer;transition:background .16s;border:1px solid transparent}
+.li:hover{background:rgba(195,160,75,.07);border-color:rgba(195,160,75,.1)}
+.li.active{background:rgba(195,160,75,.1);border-color:rgba(195,160,75,.2)}
+.lc{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.le{font-size:.85rem;line-height:1}
+.ln{font-size:.71rem;color:#bfb498;flex:1}
+.lout{font-family:'JetBrains Mono',monospace;font-size:.57rem;color:rgba(195,160,75,.48)}
+#card{position:fixed;top:50%;right:16px;transform:translateY(-50%) translateX(28px);padding:20px 18px;width:284px;z-index:20;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#card.show{opacity:1;pointer-events:all;transform:translateY(-50%) translateX(0)}
+.ctop{display:flex;align-items:flex-start;gap:10px;margin-bottom:13px}
+.cico{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;border:1px solid rgba(195,160,75,.16);background:rgba(195,160,75,.05)}
+.ctxt h2{font-family:'Playfair Display',serif;font-size:1.1rem;color:#c8a448;line-height:1.15}
+.csub{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:rgba(90,100,130,.65);letter-spacing:.1em;margin-top:2px}
+.cscore{position:absolute;top:14px;right:44px;font-family:'JetBrains Mono',monospace;font-size:.56rem;color:rgba(195,160,75,.35)}
+.xbtn{position:absolute;top:11px;right:11px;width:21px;height:21px;background:transparent;border:1px solid rgba(195,160,75,.16);border-radius:50%;cursor:pointer;color:rgba(195,160,75,.4);font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .16s}
+.xbtn:hover{border-color:#c8a448;color:#c8a448}
+.sep{height:1px;background:rgba(195,160,75,.09);margin:10px 0}
+.crow{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.cl{font-size:.68rem;color:rgba(150,140,122,.68);line-height:1.3}
+.cv{font-family:'JetBrains Mono',monospace;font-size:.69rem;color:#c8b058;text-align:right;max-width:60%;line-height:1.3}
+.cv.blue{color:#68A8E0}.cv.grn{color:#78B868}.cv.red{color:#E07878}
+.tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.tag{border-radius:5px;padding:2px 6px;font-family:'JetBrains Mono',monospace;font-size:.55rem}
+.tag.e{background:rgba(195,160,75,.07);border:1px solid rgba(195,160,75,.16);color:rgba(195,160,75,.72)}
+.tag.v{background:rgba(75,135,195,.07);border:1px solid rgba(75,135,195,.16);color:rgba(75,135,195,.8)}
+.tag.r{background:rgba(195,75,75,.07);border:1px solid rgba(195,75,75,.16);color:rgba(195,75,75,.8)}
+#compass{position:fixed;top:82px;right:22px;z-index:20;width:50px;height:50px}
+#compass svg{filter:drop-shadow(0 0 5px rgba(195,160,75,.18))}
+#hint{position:fixed;bottom:70px;left:16px;font-family:'JetBrains Mono',monospace;font-size:.56rem;color:rgba(175,150,95,.27);line-height:2.1;pointer-events:none;z-index:20}
+#loading{position:fixed;inset:0;background:#060a10;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;transition:opacity .65s}
+#loading .lico{font-size:3.5rem;margin-bottom:16px;animation:lbounce .75s ease-in-out infinite alternate}
+@keyframes lbounce{from{transform:translateY(0)}to{transform:translateY(-7px)}}
+#loading h2{font-family:'Playfair Display',serif;font-size:1.55rem;color:#c8a448;margin-bottom:16px}
+.lbar{width:240px;height:2px;background:rgba(195,160,75,.1);border-radius:2px;overflow:hidden;margin-bottom:10px}
+.lfill{height:100%;width:0;background:linear-gradient(90deg,#8A6820,#E8CC60,#8A6820);background-size:200%;animation:lw 1.9s ease-out forwards,ls 1.1s linear infinite}
+@keyframes lw{to{width:100%}}@keyframes ls{from{background-position:200%}to{background-position:0}}
+#loading p{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(195,160,75,.32);letter-spacing:.12em}
+#lstep{margin-top:8px;font-size:.58rem;color:rgba(195,160,75,.2);font-family:'JetBrains Mono',monospace;min-height:1em}
+</style>
+</head>
+<body>
+<div id="loading">
+  <div class="lico">🏠</div>
+  <h2>Construction 3D…</h2>
+  <div class="lbar"><div class="lfill"></div></div>
+  <p>SweetHome3D Example 15 — HouseWithDormers</p>
+  <div id="lstep">Initialisation…</div>
+</div>
+
+<div id="app"><canvas id="c"></canvas></div>
+
+<div class="glass" id="header">
+  <h1>Maison avec Lucarnes — Visite 3D</h1>
+  <p>~130 m² habitables &nbsp;·&nbsp; 2 niveaux + toit plat &nbsp;·&nbsp; Données électriques complètes &nbsp;·&nbsp; Cliquer sur une pièce</p>
+</div>
+
+<div class="glass" id="legend">
+  <h3>Pièces <small id="legLvl"></small></h3>
+  <div id="litems"></div>
+</div>
+
+<div class="glass" id="card">
+  <button class="xbtn" id="xbtn">×</button>
+  <div class="cscore" id="cscore"></div>
+  <div class="ctop">
+    <div class="cico" id="cico">🏠</div>
+    <div class="ctxt"><h2 id="cname">—</h2><div class="csub" id="csub">—</div></div>
+  </div>
+  <div class="crow"><span class="cl">📐 Surface</span><span class="cv" id="carea">—</span></div>
+  <div class="crow"><span class="cl">📏 Dimensions</span><span class="cv" id="cdim">—</span></div>
+  <div class="crow"><span class="cl">🔆 Hauteur sous plafond</span><span class="cv" id="chaut">—</span></div>
+  <div class="sep"></div>
+  <div class="crow"><span class="cl">⚡ Tension réseau</span><span class="cv blue" id="cvolt">—</span></div>
+  <div class="crow"><span class="cl">🔌 Nombre de prises</span><span class="cv" id="cprise">—</span></div>
+  <div class="crow"><span class="cl">💡 Interrupteurs</span><span class="cv" id="cinter">—</span></div>
+  <div class="crow"><span class="cl">🔀 Circuit / Disjoncteur</span><span class="cv" id="ccircuit">—</span></div>
+  <div class="crow"><span class="cl">🛡 Protection différentielle</span><span class="cv blue" id="cprot">—</span></div>
+  <div class="tags" id="ctags"></div>
+  <div class="sep"></div>
+  <div class="crow"><span class="cl">🌡 Chauffage</span><span class="cv grn" id="cchauf">—</span></div>
+  <div class="crow"><span class="cl">💡 Type d'éclairage</span><span class="cv" id="ceclai">—</span></div>
+  <div class="crow"><span class="cl">🛠 Équipements</span><span class="cv" id="cequip">—</span></div>
+</div>
+
+<div class="glass" id="ftabs">
+  <button class="ftab on" data-f="rdc"><span class="dot" style="background:#C8A040"></span>Rez-de-chaussée</button>
+  <button class="ftab" data-f="ss"><span class="dot" style="background:#7A50B0"></span>Sous-sol</button>
+  <button class="ftab" data-f="all"><span class="dot" style="background:#508050"></span>Vue globale</button>
+</div>
+
+<div id="compass">
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+  <circle cx="25" cy="25" r="24" stroke="rgba(195,160,75,.14)" stroke-width="1"/>
+  <polygon points="25,5 28,25 25,21 22,25" fill="#CC4040" opacity=".85"/>
+  <polygon points="25,45 22,25 25,29 28,25" fill="rgba(200,200,200,.45)"/>
+  <text x="25" y="3.5" fill="rgba(195,160,75,.65)" font-size="5.5" text-anchor="middle" font-family="JetBrains Mono">N</text>
+  <text x="48" y="27" fill="rgba(195,160,75,.35)" font-size="4.5" text-anchor="middle" font-family="JetBrains Mono">E</text>
+  <text x="25" y="50" fill="rgba(195,160,75,.35)" font-size="4.5" text-anchor="middle" font-family="JetBrains Mono">S</text>
+  <text x="2" y="27" fill="rgba(195,160,75,.35)" font-size="4.5" text-anchor="middle" font-family="JetBrains Mono">O</text>
+  <circle cx="25" cy="25" r="2.5" fill="rgba(195,160,75,.45)"/>
+</svg>
+</div>
+
+<div id="hint">⟲ Glisser → rotation<br>⊕ Molette → zoom<br>◎ Clic → détails pièce<br>↕ Onglets → changer d'étage</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════
+// ROOMS DATABASE — from Home.xml SH3D file + enriched
+// ═══════════════════════════════════════════════════
+const ROOMS={
+  rdc:[
+    {id:'salon',name:'Salon',level:'Rez-de-chaussée',ico:'🛋️',col:0xC48840,
+     tx:0.0,tz:0.0,tw:4.25,td:7.79,th:2.5,elev:0.88,
+     area:'33,1 m²',dims:'4,25 m × 7,79 m',
+     prises:6,inter:3,volt:'230 V AC / 50 Hz',circuit:'2 × 16 A',prot:'DDR 30 mA type AC',
+     tags:['3× Type E 16A','1× Type E bas 16A','2× Interrupteur double','1× RJ45','Détecteur fumée'],
+     chauf:'Radiateur électrique × 3',ecl:'Spots encastrés + appliques',
+     equip:'Canapé, Fauteuils × 2, Cheminée, Aquarium, Bibliothèque, Chaîne hi-fi, TV murale, Table basse, Tapis, Horloge comtoise'},
+    {id:'salle_manger',name:'Salle à manger',level:'Rez-de-chaussée',ico:'🍽️',col:0x7A9E76,
+     tx:4.25,tz:0.0,tw:4.03,td:3.26,th:2.5,elev:0.88,
+     area:'13,1 m²',dims:'4,03 m × 3,26 m',
+     prises:3,inter:2,volt:'230 V AC / 50 Hz',circuit:'1 × 16 A',prot:'DDR 30 mA type AC',
+     tags:['2× Type E 16A','1× Interrupteur double','1× Interrupteur simple'],
+     chauf:'Radiateur électrique × 1',ecl:'Lustre central',
+     equip:'Table 6 couverts, Chaises × 6, Vaisselier, Rideaux, Fleurs'},
+    {id:'couloir',name:'Hall / Couloir',level:'Rez-de-chaussée',ico:'🚪',col:0xA09070,
+     tx:4.25,tz:3.26,tw:7.35,td:1.31,th:2.5,elev:0.88,
+     area:'9,6 m²',dims:'7,35 m × 1,31 m',
+     prises:4,inter:4,volt:'230 V AC / 50 Hz',circuit:'1 × 16 A',prot:'DDR 30 mA type AC',
+     tags:['2× Type E 16A','2× Interrupteur double','Détecteur fumée','Sonnette filaire IP20'],
+     chauf:'Radiateur électrique × 1',ecl:'Plafonnier LED',
+     equip:'Escalier courbe béton vers sous-sol, Porte entrée double vitrage, Penderie, Paillasson, Clés'},
+    {id:'chambre',name:'Chambre parentale',level:'Rez-de-chaussée',ico:'🛏️',col:0x5A7FA8,
+     tx:8.28,tz:0.0,tw:3.32,td:3.26,th:2.5,elev:0.88,
+     area:'10,8 m²',dims:'3,32 m × 3,26 m',
+     prises:5,inter:2,volt:'230 V AC / 50 Hz',circuit:'1 × 16 A',prot:'DDR 30 mA type AC',
+     tags:['2× Type E 16A tête de lit','2× Type C 230V','1× Interrupteur double','1× Interrupteur simple','1× RJ45'],
+     chauf:'Radiateur électrique × 1',ecl:'Spots encastrés dimmables',
+     equip:'Lit double 1,45×1,93m, Armoire × 2, Commode, Miroir ovale, Secrétaire, Chaises × 2'},
+    {id:'wc',name:'WC / Bureau',level:'Rez-de-chaussée',ico:'🖥️',col:0xB09080,
+     tx:11.60,tz:0.0,tw:1.23,td:3.26,th:2.5,elev:0.88,
+     area:'4,0 m²',dims:'1,23 m × 3,26 m',
+     prises:2,inter:1,volt:'230 V AC / 50 Hz',circuit:'1 × 16 A',prot:'DDR 30 mA type AC',
+     tags:['2× Type E 16A','1× Interrupteur simple'],
+     chauf:'Radiateur électrique × 1',ecl:'Plafonnier',
+     equip:'Toilettes, Lave-mains, Bureau secrétaire, Chaises × 2, Armoire'},
+    {id:'cuisine',name:'Cuisine',level:'Rez-de-chaussée',ico:'🍳',col:0x3E9088,
+     tx:4.25,tz:4.57,tw:6.07,td:3.22,th:2.5,elev:0.88,
+     area:'19,5 m²',dims:'6,07 m × 3,22 m',
+     prises:9,inter:3,volt:'230 V AC + 400V (cuisson)',circuit:'3 circuits dédiés : 20A plan travail / 32A cuisson / 16A divers',prot:'DDR 30 mA type A + type AC',
+     tags:['5× Type E 16A plan de travail','2× Type E 16A bas','1× 32A cuisinière','1× 20A lave-vaisselle','Hotte 10A dédiée'],
+     chauf:'Radiateur électrique × 1',ecl:'Spots LED + rubans LED sous meubles',
+     equip:'Hotte aspirante, Réfrigérateur-congélateur, Four encastré, Plaque induction 4 zones, Machine à café, Grille-pain, Évier inox, Tabourets × 2, Chariots'},
+    {id:'sdb',name:'Salle de bain',level:'Rez-de-chaussée',ico:'🛁',col:0x5AAABB,
+     tx:10.32,tz:4.57,tw:2.51,td:3.22,th:2.5,elev:0.88,
+     area:'8,1 m²',dims:'2,51 m × 3,22 m',
+     prises:3,inter:2,volt:'12 V TBTS zones 0-1 / 230V zone 3',circuit:'Circuit séparé TBTS + 16A zone 3',prot:'DDR 30 mA type A obligatoire NFC 15-100',
+     tags:['1× Type E 16A zone 3','1× Type C rasoir 230/12V','NFC 15-100 zones 0-1-2-3','Circuit ITT séparé','Siphon de sol'],
+     chauf:'Sèche-serviettes élec. 500W + radiateur',ecl:'Hublot IP44 + LED miroir IP44',
+     equip:'Baignoire en L (130×72cm), Double vasque, Miroir éclairant, WC, Armoire pharmacie, Serviettes, Bathmat'},
+  ],
+  ss:[
+    {id:'jeux',name:'Salle de jeux',level:'Sous-sol',ico:'🎮',col:0x7A4EA8,
+     tx:0.0,tz:0.0,tw:4.25,td:7.79,th:2.26,elev:-1.5,
+     area:'33,1 m²',dims:'4,25 m × 7,79 m',
+     prises:8,inter:4,volt:'230 V AC / 50 Hz',circuit:'2 × 16 A',prot:'DDR 30 mA type AC',
+     tags:['4× Type E 16A','2× Interrupteur double','2× Interrupteur simple','Éclairage sécurité','Signalisation sortie'],
+     chauf:'Radiateur électrique × 2',ecl:'Plafonnier + appliques + réglette',
+     equip:'Flipper vintage, Billard, Table tennis, Banc, Penderie, Étagères pin, Skateboard, Scooter, Casques, Chaussures'},
+    {id:'cave',name:'Cave à vin',level:'Sous-sol',ico:'🍷',col:0x8A2828,
+     tx:4.25,tz:0.0,tw:1.5,td:3.26,th:2.26,elev:-1.5,
+     area:'4,9 m²',dims:'1,5 m × 3,26 m',
+     prises:1,inter:1,volt:'230 V AC',circuit:'1 × 16 A',prot:'DDR 30 mA',
+     tags:['1× Type E 16A','1× Interrupteur simple'],
+     chauf:'Non chauffé — temp. naturelle 12–14°C',ecl:'Ampoule filament E27',
+     equip:'Casiers bouteilles pin (basse hauteur, moyenne, pleine hauteur), Bouteilles stockage'},
+    {id:'entcave',name:'Entrée cave',level:'Sous-sol',ico:'🔑',col:0x908870,
+     tx:4.25,tz:3.26,tw:1.5,td:2.2,th:2.26,elev:-1.5,
+     area:'3,3 m²',dims:'1,5 m × 2,2 m',
+     prises:1,inter:1,volt:'230 V AC',circuit:'1 × 16 A',prot:'DDR 30 mA',
+     tags:['1× Type E 16A','1× Interrupteur simple'],
+     chauf:'Non chauffé',ecl:'Réglette fluorescente',
+     equip:'Palier escalier, Porte de cave, Paillasse'},
+    {id:'garage',name:'Garage / Parking',level:'Sous-sol',ico:'🚗',col:0x606070,
+     tx:5.82,tz:0.0,tw:7.01,td:3.26,th:2.26,elev:-1.5,
+     area:'22,8 m²',dims:'7,01 m × 3,26 m',
+     prises:5,inter:2,volt:'230 V AC + 32A borne VE',circuit:'2 × 16A + 1 × 32A borne charge',prot:'DDR 30 mA type A',
+     tags:['3× Type E 16A','1× 32A borne VE','1× Interrupteur double','1× Interrupteur simple','Détecteur CO monoxyde'],
+     chauf:'Non chauffé',ecl:'Réglettes LED atelier',
+     equip:'Porte basculante motorisée 2,74m, Smart Car, Scooter × 2, Bicyclettes × 2, SUV 4×4'},
+    {id:'chaufferie',name:'Chaufferie / Local tech.',level:'Sous-sol',ico:'🔥',col:0xB07848,
+     tx:7.75,tz:3.26,tw:5.08,td:4.53,th:2.26,elev:-1.5,
+     area:'23,0 m²',dims:'5,08 m × 4,53 m',
+     prises:3,inter:2,volt:'230 V AC',circuit:'2 circuits dédiés : chaudière + VMC',prot:'DDR 30 mA type AC',
+     tags:['2× Type E 16A','1× Circuit chaudière dédié','1× Circuit VMC','Détecteur CO2 obligatoire','Vanne gaz principale'],
+     chauf:'Chaudière gaz condensation (source centrale)',ecl:'Plafonnier IP44',
+     equip:'Chaudière gaz, Ballon ECS, VMC double flux, Tableau électrique principal, Extincteur CO2, Signalisation sécurité'},
+    {id:'atelier',name:'Atelier / Rangement',level:'Sous-sol',ico:'🔧',col:0x907858,
+     tx:4.25,tz:5.46,tw:3.5,td:2.33,th:2.26,elev:-1.5,
+     area:'8,1 m²',dims:'3,5 m × 2,33 m',
+     prises:4,inter:2,volt:'230 V AC',circuit:'1 × 16 A',prot:'DDR 30 mA',
+     tags:['3× Type E 16A','1× Interrupteur double','1× Interrupteur simple'],
+     chauf:'Non chauffé',ecl:'Réglette atelier',
+     equip:'Établi, Perceuse, Scie sauteuse, Grinder, Marteau, Tournevis, Casque, Boîtes rangement, Établi bois'},
+  ],
+  combles:[]
+};
+const ALLROOMS=[...ROOMS.rdc,...ROOMS.ss,...ROOMS.combles];
+
+// ═══════════════════════════════════════════════════
+// THREE.JS INIT
+// ═══════════════════════════════════════════════════
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.18;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x060a12);
+scene.fog=new THREE.FogExp2(0x060a12,0.011);
+
+const cam=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,300);
+function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+window.addEventListener('resize',resize);resize();
+
+let sph={t:-0.55,p:0.88,r:27};
+const tgt=new THREE.Vector3(6.41,1.5,3.9);
+let drag=false,pm={x:0,y:0},autoRot=true,artTO;
+function camApply(){
+  cam.position.set(tgt.x+sph.r*Math.sin(sph.p)*Math.sin(sph.t),tgt.y+sph.r*Math.cos(sph.p),tgt.z+sph.r*Math.sin(sph.p)*Math.cos(sph.t));
+  cam.lookAt(tgt);
+}
+camApply();
+function resetAuto(){autoRot=false;clearTimeout(artTO);artTO=setTimeout(()=>autoRot=true,5000)}
+canvas.addEventListener('mousedown',e=>{drag=true;pm={x:e.clientX,y:e.clientY};resetAuto()});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{if(!drag)return;sph.t-=(e.clientX-pm.x)*0.0055;sph.p=Math.max(0.08,Math.min(1.52,sph.p+(e.clientY-pm.y)*0.0055));pm={x:e.clientX,y:e.clientY};camApply()});
+canvas.addEventListener('wheel',e=>{sph.r=Math.max(6,Math.min(60,sph.r+e.deltaY*0.04));camApply();resetAuto()},{passive:true});
+let ltd=0;
+canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;pm={x:e.touches[0].clientX,y:e.touches[0].clientY}}if(e.touches.length===2)ltd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);resetAuto()},{passive:true});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&drag){sph.t-=(e.touches[0].clientX-pm.x)*0.0055;sph.p=Math.max(0.08,Math.min(1.52,sph.p+(e.touches[0].clientY-pm.y)*0.0055));pm={x:e.touches[0].clientX,y:e.touches[0].clientY};camApply()}if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);sph.r=Math.max(6,Math.min(60,sph.r-(d-ltd)*0.03));ltd=d;camApply()}},{passive:false});
+canvas.addEventListener('touchend',()=>drag=false);
+
+// ═══════════════════════════════════════════════════
+// LIGHTING
+// ═══════════════════════════════════════════════════
+scene.add(new THREE.AmbientLight(0xFFF8F0,0.38));
+const sun=new THREE.DirectionalLight(0xFFFCF0,2.4);
+sun.position.set(20,28,10);sun.castShadow=true;
+sun.shadow.mapSize.set(4096,4096);
+sun.shadow.camera.left=-24;sun.shadow.camera.right=34;
+sun.shadow.camera.top=28;sun.shadow.camera.bottom=-14;
+sun.shadow.camera.far=90;sun.shadow.bias=-0.001;scene.add(sun);
+const sky=new THREE.DirectionalLight(0x6090CC,0.55);sky.position.set(-12,12,-6);scene.add(sky);
+const rim=new THREE.DirectionalLight(0xFFD090,0.28);rim.position.set(3,-4,24);scene.add(rim);
+[[1.8,2.2,3.9],[5.2,2.2,1.8],[9.5,2.2,1.5],[9.5,2.2,6.1],[1.8,-0.8,3.9],[9.5,-0.8,5.0]].forEach(([x,y,z])=>{
+  const pl=new THREE.PointLight(y>0?0xFFCC88:0xFFEEAA,0.42,y>0?9:11);
+  pl.position.set(x,y,z);scene.add(pl);
+});
+
+// ═══════════════════════════════════════════════════
+// MATERIALS
+// ═══════════════════════════════════════════════════
+const M={
+  plaster:new THREE.MeshStandardMaterial({color:0xEEEAE0,roughness:0.92}),
+  plasterB:new THREE.MeshStandardMaterial({color:0xE8E4D8,roughness:0.9}),
+  stone:new THREE.MeshStandardMaterial({color:0x6E6258,roughness:0.95}),
+  stoneDk:new THREE.MeshStandardMaterial({color:0x585048,roughness:0.95}),
+  roof:new THREE.MeshStandardMaterial({color:0x1A2430,roughness:0.9,metalness:0.07,side:THREE.DoubleSide}),
+  roofRidge:new THREE.MeshStandardMaterial({color:0x0F181E,roughness:0.7}),
+  glass:new THREE.MeshStandardMaterial({color:0x88BBCC,roughness:0.04,metalness:0.2,transparent:true,opacity:0.5,side:THREE.DoubleSide}),
+  frame:new THREE.MeshStandardMaterial({color:0xD6CEB8,roughness:0.65}),
+  door:new THREE.MeshStandardMaterial({color:0x2C1A06,roughness:0.55,metalness:0.05}),
+  ground:new THREE.MeshStandardMaterial({color:0x1A380E,roughness:0.96}),
+  concrete:new THREE.MeshStandardMaterial({color:0x585858,roughness:0.85}),
+  wood:new THREE.MeshStandardMaterial({color:0x6A4420,roughness:0.75}),
+  metalGold:new THREE.MeshStandardMaterial({color:0xC8A840,roughness:0.2,metalness:0.85}),
+  shutterGrey:new THREE.MeshStandardMaterial({color:0xB8B8B8,roughness:0.7}),
+  part:new THREE.MeshStandardMaterial({color:0xF0EDE4,roughness:0.88}),
+  partB:new THREE.MeshStandardMaterial({color:0x686258,roughness:0.9}),
+};
+
+// ═══════════════════════════════════════════════════
+// GEO HELPERS
+// ═══════════════════════════════════════════════════
+function bx(w,h,d,mat,{x=0,y=0,z=0,cast=true,recv=true}={}){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(x+w/2,y+h/2,z+d/2);
+  m.castShadow=cast;m.receiveShadow=recv;scene.add(m);return m;
+}
+function tri(verts,mat=M.roof){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(verts),3));
+  g.computeVertexNormals();
+  const m=new THREE.Mesh(g,mat);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+}
+function quad(ax,ay,az,bx2,by,bz,cx,cy,cz,dx,dy,dz,mat=M.roof){
+  tri([ax,ay,az,bx2,by,bz,cx,cy,cz,ax,ay,az,cx,cy,cz,dx,dy,dz],mat);
+}
+
+// ═══════════════════════════════════════════════════
+// GROUND & ENVIRONMENT
+// ═══════════════════════════════════════════════════
+const lstep=document.getElementById('lstep');
+function step(s){lstep.textContent=s}step('Terrain…');
+
+const gndM=new THREE.Mesh(new THREE.PlaneGeometry(120,110),M.ground);
+gndM.rotation.x=-Math.PI/2;gndM.position.y=-0.03;gndM.receiveShadow=true;scene.add(gndM);
+// Road
+const road=new THREE.Mesh(new THREE.PlaneGeometry(32,7),new THREE.MeshStandardMaterial({color:0x28282C,roughness:0.85}));
+road.rotation.x=-Math.PI/2;road.position.set(6.4,-0.02,-5.5);road.receiveShadow=true;scene.add(road);
+[-3.5,-1.5,0,1.5,3.5].forEach(rx=>{
+  const rl=new THREE.Mesh(new THREE.PlaneGeometry(0.12,1.6),new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:0.8}));
+  rl.rotation.x=-Math.PI/2;rl.position.set(rx,-0.01,-5.5);scene.add(rl);
+});
+// Terrace
+bx(13.05,0.1,1.85,M.concrete,{x:-0.1,y:0.83,z:-1.85});
+// Terrace railing posts
+for(let i=0;i<=12;i++) bx(0.055,0.82,0.055,M.frame,{x:i*1.0,y:0.93,z:-1.87});
+bx(12.5,0.04,0.055,M.frame,{x:0.2,y:1.74,z:-1.87});
+// Garden path
+const pathM=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.06,3.8),new THREE.MeshStandardMaterial({color:0x908878,roughness:0.8}));
+pathM.position.set(5.5,0.0,-2.6);scene.add(pathM);
+// Letterbox
+bx(0.08,1.0,0.08,M.wood,{x:-1.9,y:0,z:-2.0});
+const lb=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.2,0.15),new THREE.MeshStandardMaterial({color:0x3A2408,roughness:0.7}));
+lb.position.set(-1.86,1.05,-1.92);scene.add(lb);
+// Garden hut
+bx(2.2,2.0,2.0,M.wood,{x:13.5,y:0,z:9.5});
+tri([13.5,2.0,9.5,15.7,2.0,9.5,14.6,2.7,10.5,13.5,2.0,9.5,14.6,2.7,10.5,14.6,2.7,10.5]);
+tri([13.5,2.0,11.5,14.6,2.7,10.5,15.7,2.0,11.5,13.5,2.0,11.5,15.7,2.0,11.5,15.7,2.0,11.5]);
+tri([13.5,2.0,9.5,13.5,2.0,11.5,14.6,2.7,10.5]);tri([15.7,2.0,9.5,14.6,2.7,10.5,15.7,2.0,11.5]);
+// Deck chairs
+[-2.2,-3.8].forEach((x,i)=>{
+  bx(0.58,0.22,1.75,new THREE.MeshStandardMaterial({color:0x38280E,roughness:0.75}),{x,y:0,z:11+i*0.4});
+  bx(0.56,0.52,0.75,new THREE.MeshStandardMaterial({color:0x38280E,roughness:0.75}),{x,y:0.2,z:11.6+i*0.4});
+});
+const upole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,2.4,8),M.metalGold);upole.position.set(-2.2,1.2,12.4);scene.add(upole);
+const utop=new THREE.Mesh(new THREE.ConeGeometry(1.2,0.38,16),new THREE.MeshStandardMaterial({color:0xE8E0D0,roughness:0.8}));utop.position.set(-2.2,2.59,12.4);scene.add(utop);
+
+// Trees
+function tree(x,z,h=3.8,hue=0){
+  const th=h*0.27,trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.13,th,7),M.wood);
+  trunk.position.set(x,th/2,z);trunk.castShadow=true;scene.add(trunk);
+  const lc=new THREE.Color();lc.setHSL(0.32+hue,0.58,0.21+Math.random()*0.06);
+  const lm=new THREE.MeshStandardMaterial({color:lc,roughness:0.92});
+  [[0,h*0.51,0,h*0.22],[h*0.09,h*0.63,-h*0.08,h*0.16],[-h*0.08,h*0.59,h*0.07,h*0.14]].forEach(([dx,dy,dz,r])=>{
+    const lf=new THREE.Mesh(new THREE.SphereGeometry(r,9,7),lm);lf.position.set(x+dx,dy,z+dz);lf.castShadow=true;scene.add(lf);
+  });
+}
+tree(-4.5,1.5,5.2);tree(-3.8,5.5,4.6,0.02);tree(-4.2,8.8,5.8);
+tree(18.5,0.8,4.2);tree(18.2,5.2,4.8,0.01);tree(18.5,10.2,5.4);
+tree(3.0,12.5,6.0,0.03);tree(8.0,13.5,4.8);tree(12.5,12.2,5.5,0.02);
+tree(-2.0,10.5,5.0,0.03);tree(14.0,14.0,3.8);
+// Bushes front
+[1.4,3.1,4.8,6.5,8.2,9.9,11.6].forEach(bxp=>{
+  const r=0.3+Math.random()*0.18;const bc=new THREE.Color();bc.setHSL(0.33,0.58,0.2);
+  const b=new THREE.Mesh(new THREE.SphereGeometry(r,8,6),new THREE.MeshStandardMaterial({color:bc,roughness:0.95}));
+  b.position.set(bxp,r*0.9,-1.15);b.castShadow=true;scene.add(b);
+});
+// Bushes back
+[0.6,2.5,4.4,6.3,8.2,10.1,12.0].forEach(bxp=>{
+  const r=0.26+Math.random()*0.14;const bc=new THREE.Color();bc.setHSL(0.35,0.55,0.22);
+  const b=new THREE.Mesh(new THREE.SphereGeometry(r,8,6),new THREE.MeshStandardMaterial({color:bc,roughness:0.95}));
+  b.position.set(bxp,r,8.05);b.castShadow=true;scene.add(b);
+});
+
+// ═══════════════════════════════════════════════════
+// HOUSE STRUCTURE
+// ═══════════════════════════════════════════════════
+step('Murs…');
+const W=12.83,D=7.79,y0=0.88,yB=-1.5,wallH=2.5,bH=2.26,bVis=y0-yB;
+const eaveY=y0+wallH,ridgeH=2.85,ridgeY=eaveY+ridgeH,ridgeZ=D/2;
+
+// BASEMENT SHELL
+bx(W,bVis,0.15,M.stone,{x:0,y:yB,z:0});
+bx(W,bVis,0.15,M.stoneDk,{x:0,y:yB,z:D-0.15});
+bx(0.15,bVis,D,M.stone,{x:0,y:yB,z:0});
+bx(0.15,bVis,D,M.stone,{x:W-0.15,y:yB,z:0});
+// Basement slab
+bx(W,0.12,D,new THREE.MeshStandardMaterial({color:0x3C3C34,roughness:0.9}),{x:0,y:y0-0.12,z:0});
+// Basement windows (strip)
+[1.9,4.5].forEach(bwz=>{
+  bx(1.2,0.42,0.06,M.frame,{x:0.1,y:yB+bVis*0.82,z:bwz-0.6});
+  const gl=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.36),M.glass);gl.rotation.y=Math.PI/2;gl.position.set(0.14,yB+bVis*0.82+0.21,bwz);scene.add(gl);
+});
+
+// GROUND FLOOR SHELL
+bx(W,wallH,0.15,M.plaster,{x:0,y:y0,z:0});
+bx(W,wallH,0.15,M.plasterB,{x:0,y:y0,z:D-0.15});
+bx(0.15,wallH,D,new THREE.MeshStandardMaterial({color:0xEAE4D8,roughness:0.9}),{x:0,y:y0,z:0});
+bx(0.15,wallH,D,new THREE.MeshStandardMaterial({color:0xEAE4D8,roughness:0.9}),{x:W-0.15,y:y0,z:0});
+
+// INTERIOR PARTITIONS (RDC)
+const pT=0.07;
+bx(pT,wallH,D,M.part,{x:4.25,y:y0,z:0});
+bx(pT,wallH,3.26,M.part,{x:8.28,y:y0,z:0});
+bx(pT,wallH,4.57,M.part,{x:11.60,y:y0,z:0});
+bx(W-4.25,pT,pT,M.part,{x:4.25,y:y0+0.01,z:3.26});
+bx(W-4.25,pT,pT,M.part,{x:4.25,y:y0+0.01,z:4.57});
+bx(pT,wallH,D-4.57,M.part,{x:10.32,y:y0,z:4.57});
+
+// INTERIOR PARTITIONS (Basement)
+bx(pT,bH,D,M.partB,{x:4.25,y:yB,z:0});
+bx(pT,bH,3.26,M.partB,{x:5.82,y:yB,z:0});
+bx(W-5.82,pT,pT,M.partB,{x:5.82,y:yB+0.01,z:3.26});
+bx(W-7.75,pT,pT,M.partB,{x:7.75,y:yB+0.01,z:5.46});
+bx(pT,bH,D-5.46,M.partB,{x:7.75,y:yB,z:5.46});
+
+// ═══════════════════════════════════════════════════
+// WINDOWS
+// ═══════════════════════════════════════════════════
+step('Fenêtres…');
+function mkWin(cx,cy,cz,ww,wh,ry=0,sh=true){
+  const fr=new THREE.Mesh(new THREE.BoxGeometry(ww+0.10,wh+0.10,0.12),M.frame);
+  fr.position.set(cx,cy,cz);fr.rotation.y=ry;fr.castShadow=true;scene.add(fr);
+  const gl=new THREE.Mesh(new THREE.PlaneGeometry(ww-0.05,wh-0.05),M.glass);
+  gl.position.set(cx,cy,cz+(ry===0?0.065:0));gl.rotation.y=ry;scene.add(gl);
+  const ml=new THREE.Mesh(new THREE.BoxGeometry(0.025,wh-0.08,0.14),M.frame);
+  ml.position.set(cx,cy,cz+(ry===0?0.004:0));ml.rotation.y=ry;scene.add(ml);
+  const sill=new THREE.Mesh(new THREE.BoxGeometry(ww+0.20,0.055,0.18),M.frame);
+  sill.position.set(cx,cy-wh/2-0.018,cz+(ry===0?0.02:0));sill.rotation.y=ry;scene.add(sill);
+  if(sh&&ry===0){[-1,1].forEach(s=>{
+    const sh2=new THREE.Mesh(new THREE.BoxGeometry(ww*0.46,wh,0.04),M.shutterGrey);
+    sh2.position.set(cx+s*(ww*0.5+ww*0.24),cy,cz-0.04);scene.add(sh2);
+    for(let k=0;k<5;k++){
+      const sl=new THREE.Mesh(new THREE.BoxGeometry(ww*0.44,0.028,0.02),new THREE.MeshStandardMaterial({color:0x969696}));
+      sl.position.set(cx+s*(ww*0.5+ww*0.24),cy-wh*0.36+k*(wh*0.18),cz-0.035);scene.add(sl);
+    }
+  });}
+}
+// Front
+mkWin(W*0.16,y0+1.3,0.075,1.6,1.1,0,true);
+mkWin(W*0.40,y0+1.3,0.075,1.5,1.1,0,true);
+mkWin(W*0.69,y0+1.3,0.075,1.5,1.1,0,true);
+mkWin(W*0.89,y0+1.28,0.075,1.2,1.08,0,false);
+// Back
+mkWin(W*0.14,y0+1.32,D-0.075,1.8,1.15,Math.PI,false);
+mkWin(W*0.38,y0+1.32,D-0.075,1.5,1.1,Math.PI,false);
+mkWin(W*0.62,y0+1.32,D-0.075,1.5,1.1,Math.PI,false);
+mkWin(W*0.87,y0+1.32,D-0.075,1.2,1.08,Math.PI,false);
+// Left side
+mkWin(0.075,y0+1.3,D*0.28,1.0,1.0,Math.PI/2,false);
+mkWin(0.075,y0+1.3,D*0.72,1.0,1.0,Math.PI/2,false);
+// Basement side windows
+[2.0,4.6].forEach(bwz=>{mkWin(-0.05,yB+bVis*0.82,bwz,1.2,0.4,Math.PI/2,false)});
+
+// Front door
+const dfr=new THREE.Mesh(new THREE.BoxGeometry(1.1,2.24,0.16),M.frame);dfr.position.set(W*0.50,y0+1.12,0.08);scene.add(dfr);
+const dpnl=new THREE.Mesh(new THREE.BoxGeometry(0.96,2.1,0.10),M.door);dpnl.position.set(W*0.50,y0+1.05,0.09);dpnl.castShadow=true;scene.add(dpnl);
+const dgl=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.52),M.glass);dgl.position.set(W*0.50,y0+1.75,0.145);scene.add(dgl);
+const dh=new THREE.Mesh(new THREE.SphereGeometry(0.044,8,8),M.metalGold);dh.position.set(W*0.50+0.34,y0+1.05,0.15);scene.add(dh);
+// Door canopy
+bx(2.1,0.08,0.8,M.concrete,{x:W*0.50-1.05,y:y0+2.4,z:-0.75});
+bx(0.055,2.42,0.055,M.concrete,{x:W*0.50-0.95,y:y0,z:-0.73});
+bx(0.055,2.42,0.055,M.concrete,{x:W*0.50+0.9,y:y0,z:-0.73});
+
+// Garage door
+const gdfr=new THREE.Mesh(new THREE.BoxGeometry(2.78,2.09,0.14),M.frame);gdfr.position.set(10.82,yB+bVis*0.45+0.3,0.07);scene.add(gdfr);
+const gdpnl=new THREE.Mesh(new THREE.BoxGeometry(2.74,2.05,0.10),new THREE.MeshStandardMaterial({color:0x505060,roughness:0.4,metalness:0.3}));gdpnl.position.set(10.82,yB+bVis*0.45+0.3,0.08);gdpnl.castShadow=true;scene.add(gdpnl);
+for(let i=1;i<5;i++){const gp=new THREE.Mesh(new THREE.BoxGeometry(2.72,0.028,0.02),new THREE.MeshStandardMaterial({color:0x30303A}));gp.position.set(10.82,yB+0.28+i*0.41,0.15);scene.add(gp)}
+
+// Outside staircase
+[0,1,2,3].forEach(i=>{
+  bx(3.3,0.2,0.3,M.concrete,{x:W*0.34-1.65,y:y0-0.22*(4-i),z:-0.33-i*0.30});
+  bx(3.3,0.04,0.055,new THREE.MeshStandardMaterial({color:0x484858,roughness:0.7}),{x:W*0.34-1.65,y:y0-0.22*(4-i)+0.2,z:-0.33-i*0.30});
+});
+bx(0.055,0.88,0.055,M.frame,{x:W*0.22,y:y0-0.88,z:-1.5});
+bx(0.055,0.88,0.055,M.frame,{x:W*0.22+3.1,y:y0-0.88,z:-1.5});
+bx(3.1,0.04,0.055,M.frame,{x:W*0.22,y:y0-0.02,z:-1.5});
+
+// ═══════════════════════════════════════════════════
+// ROOF — TOIT PLAT
+// ═══════════════════════════════════════════════════
+step('Toiture plate…');
+// Dalle de toit plate (légèrement plus large que la maison)
+const roofFlatMat=new THREE.MeshStandardMaterial({color:0x2A3038,roughness:0.88,metalness:0.06});
+bx(W+0.5,0.22,D+0.5,roofFlatMat,{x:-0.25,y:eaveY,z:-0.25});
+// Acrotère (rebord périphérique du toit plat)
+const acroMat=new THREE.MeshStandardMaterial({color:0xE8E4DC,roughness:0.9});
+bx(W+0.5,0.55,0.18,acroMat,{x:-0.25,y:eaveY+0.22,z:-0.25});   // avant
+bx(W+0.5,0.55,0.18,acroMat,{x:-0.25,y:eaveY+0.22,z:D+0.07});  // arrière
+bx(0.18,0.55,D+0.5,acroMat,{x:-0.43,y:eaveY+0.22,z:-0.25});   // gauche
+bx(0.18,0.55,D+0.5,acroMat,{x:W+0.07,y:eaveY+0.22,z:-0.25});  // droite
+// Gravillons / membrane sur le toit
+const gravelMat=new THREE.MeshStandardMaterial({color:0x606870,roughness:0.98,metalness:0.0});
+bx(W+0.08,0.04,D+0.08,gravelMat,{x:-0.04,y:eaveY+0.22,z:-0.04});
+// Éléments en toiture (VMC, gaines)
+[2.0,8.5].forEach(rx=>{
+  bx(0.5,0.4,0.5,new THREE.MeshStandardMaterial({color:0x888890,roughness:0.6,metalness:0.3}),{x:rx,y:eaveY+0.26,z:D*0.4});
+  bx(0.12,0.55,0.12,new THREE.MeshStandardMaterial({color:0x666670,roughness:0.5,metalness:0.4}),{x:rx+0.19,y:eaveY+0.66,z:D*0.4+0.19});
+});
+
+// ═══════════════════════════════════════════════════
+// FURNITURE (iconic)
+// ═══════════════════════════════════════════════════
+step('Mobilier…');
+function furn(w,h,d,col,px,py,pz){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:col,roughness:0.68,metalness:0.04}));
+  m.position.set(px+w/2,py+h/2,pz+d/2);m.castShadow=true;scene.add(m);
+}
+// Salon
+furn(2.2,0.72,0.88,0x484858,0.15,y0,2.75);furn(0.82,0.68,0.78,0x484858,0.15,y0,1.9);furn(0.82,0.68,0.78,0x484858,0.15,y0,3.6);
+furn(1.1,0.40,0.62,0x6A5030,0.9,y0,2.96);furn(0.28,1.75,2.0,0x4A3820,0.16,y0,0.52);
+furn(0.27,1.15,0.27,0x181818,0.22,y0,0.88);furn(0.27,1.15,0.27,0x181818,0.22,y0,5.18);
+furn(1.15,1.02,0.34,0x2E2E38,3.85,y0,2.68);
+// Salle à manger
+furn(1.2,0.74,0.78,0x8A6830,4.95,y0,0.98);
+[[4.72,0.58],[5.48,0.58],[5.98,1.1],[5.98,0.58],[5.48,1.1],[4.72,1.1]].forEach(([cx,cz])=>furn(0.40,0.84,0.40,0x3A2810,cx,y0,cz));
+// Chambre parents
+furn(1.45,0.52,1.92,0x6A6070,8.5,y0,0.18);furn(2.78,1.95,0.58,0x5A4020,8.34,y0,0.06);
+// Cuisine
+furn(0.60,0.88,3.18,0x585050,12.18,y0,4.62);furn(2.2,0.88,0.58,0x585050,9.68,y0,4.62);furn(0.60,0.88,2.48,0x585050,12.18,y0,6.3);
+furn(0.64,1.82,0.66,0xAAAAAA,9.28,y0,4.65);// fridge
+// SDB
+furn(1.28,0.52,0.70,0xF0EEEA,10.98,y0,7.06);furn(0.68,0.82,0.52,0xF0EEEA,12.08,y0,5.78);
+// Basement
+furn(2.55,0.80,1.35,0x1A5A1A,0.85,yB+bVis,2.18);
+furn(2.57,0.04,1.37,0x2A7A2A,0.84,yB+bVis+0.80,2.17);// billiard top
+furn(0.64,1.48,1.08,0x1A1A2A,0.82,yB+bVis,6.48);// flipper
+furn(2.74,0.74,1.50,0x285090,1.78,yB+bVis,3.28);// ping-pong
+furn(0.34,1.58,2.78,0x3A2810,4.52,yB+bVis,0.38);// wine rack
+furn(0.58,0.90,1.18,0x4A3820,7.02,yB+bVis,0.88);// workbench
+furn(2.48,1.42,3.78,0xCCCCCC,7.48,yB+bVis,0.18);// smart car
+furn(1.98,1.68,4.48,0x2A3A4A,9.78,yB+bVis,0.18);// SUV
+furn(0.78,1.38,0.78,0xA0A0A8,8.38,yB+bVis,3.48);// boiler
+furn(0.62,1.18,0.62,0x808088,9.32,yB+bVis,3.48);// water heater
+// (pas de combles)
+
+// ═══════════════════════════════════════════════════
+// ELECTRICAL OUTLETS (visual markers)
+// ═══════════════════════════════════════════════════
+step('Électricité…');
+const outMat=new THREE.MeshStandardMaterial({color:0xFFE050,emissive:new THREE.Color(0xFFAA00),emissiveIntensity:0.38,roughness:0.2});
+const swMat=new THREE.MeshStandardMaterial({color:0x4080FF,emissive:new THREE.Color(0x2050CC),emissiveIntensity:0.28,roughness:0.3});
+const outMeshes=[];
+// Outlets on walls (representative)
+[
+  {x:0.12,y:y0+0.4,z:1.2},{x:0.12,y:y0+0.4,z:4.5},{x:4.2,y:y0+0.4,z:1.5},{x:2.0,y:y0+0.4,z:0.12},
+  {x:5.0,y:y0+0.4,z:0.12},{x:7.5,y:y0+0.4,z:0.12},{x:9.5,y:y0+0.4,z:0.12},{x:11.5,y:y0+0.4,z:0.12},
+  {x:12.18,y:y0+0.96,z:5.2},{x:12.18,y:y0+0.96,z:6.5},{x:10.0,y:y0+0.96,z:4.62},{x:8.5,y:y0+0.96,z:4.62},
+  {x:12.18,y:y0+0.5,z:5.8},{x:4.28,y:y0+0.4,z:4.0},{x:4.28,y:y0+0.4,z:1.2},
+].forEach(o=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.10,0.05),outMat.clone());
+  m.position.set(o.x,o.y,o.z);scene.add(m);outMeshes.push(m);
+});
+// Switches
+[{x:4.22,y:y0+1.1,z:0.5},{x:4.22,y:y0+1.1,z:3.0},{x:4.22,y:y0+1.1,z:5.5},{x:8.25,y:y0+1.1,z:0.5},{x:11.57,y:y0+1.1,z:0.5}].forEach(s=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.07,0.04),swMat.clone());m.position.set(s.x,s.y,s.z);scene.add(m);
+});
+
+// ═══════════════════════════════════════════════════
+// INTERACTIVE ROOMS
+// ═══════════════════════════════════════════════════
+step('Pièces interactives…');
+const roomMeshes=[],roomGrps={};
+let activeRoom=null;
+
+function hexS(col){return '#'+col.toString(16).padStart(6,'0')}
+
+function makeLabel(name,ico,colHex,level){
+  const cv=document.createElement('canvas');cv.width=288;cv.height=84;
+  const ctx=cv.getContext('2d');
+  const [r,g,b]=[parseInt(colHex.slice(1,3),16),parseInt(colHex.slice(3,5),16),parseInt(colHex.slice(5,7),16)];
+  ctx.fillStyle='rgba(6,10,16,.89)';ctx.beginPath();ctx.roundRect(2,2,284,80,11);ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},.58)`;ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(2,2,284,80,11);ctx.stroke();
+  ctx.font='bold 21px serif';ctx.fillStyle='#fff';ctx.textAlign='left';ctx.fillText(ico,13,52);
+  ctx.font='600 13.5px Nunito,sans-serif';ctx.fillStyle=colHex;ctx.fillText(name,50,30);
+  ctx.font='11px JetBrains Mono,monospace';ctx.fillStyle='rgba(195,170,130,.52)';ctx.fillText(level,50,47);
+  ctx.font='10.5px JetBrains Mono,monospace';ctx.fillStyle='rgba(195,170,130,.36)';ctx.fillText('↩ clic pour détails électriques',50,64);
+  const tex=new THREE.CanvasTexture(cv);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,depthTest:false}));
+  sp.scale.set(3.45,1.02,1);return sp;
+}
+
+function buildRooms(which){
+  Object.values(roomGrps).forEach(g=>scene.remove(g));
+  Object.keys(roomGrps).forEach(k=>delete roomGrps[k]);
+  roomMeshes.length=0;
+  const list=which==='all'?ALLROOMS:(ROOMS[which]||[]);
+  list.forEach(r=>{
+    const g=new THREE.Group(),ch=hexS(r.col);
+    const flM=new THREE.MeshStandardMaterial({color:r.col,roughness:0.62,transparent:true,opacity:0.84});
+    const fl=new THREE.Mesh(new THREE.PlaneGeometry(r.tw-0.05,r.td-0.05),flM);
+    fl.rotation.x=-Math.PI/2;fl.position.set(r.tx+r.tw/2,r.elev+0.018,r.tz+r.td/2);
+    fl.receiveShadow=true;fl.userData=r;g.add(fl);roomMeshes.push(fl);
+    // Outline
+    const eg=new THREE.EdgesGeometry(new THREE.BoxGeometry(r.tw-0.04,0.02,r.td-0.04));
+    const el=new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:r.col,transparent:true,opacity:0.5}));
+    el.position.set(r.tx+r.tw/2,r.elev+0.02,r.tz+r.td/2);g.add(el);
+    // Outlet icons on floor
+    const n=Math.min(r.prises,6);
+    for(let i=0;i<n;i++){
+      const a=(i/n)*Math.PI*2,ox=r.tx+r.tw/2+Math.cos(a)*r.tw*0.30,oz=r.tz+r.td/2+Math.sin(a)*r.td*0.30;
+      const em=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.11,0.06),outMat.clone());
+      em.position.set(ox,r.elev+0.06,oz);g.add(em);
+    }
+    // Sprite
+    const sp=makeLabel(r.name,r.ico,ch,r.level);
+    sp.position.set(r.tx+r.tw/2,r.elev+r.th*0.5,r.tz+r.td/2);sp.userData={rid:r.id};g.add(sp);
+    scene.add(g);roomGrps[r.id]=g;
+  });
+}
+buildRooms('rdc');
+
+// ═══════════════════════════════════════════════════
+// UI — LEGEND
+// ═══════════════════════════════════════════════════
+const LVL={'rdc':'Rez-de-chaussée','ss':'Sous-sol','combles':'Combles','all':'Tous niveaux'};
+function buildLegend(w){
+  const el=document.getElementById('litems');el.innerHTML='';
+  document.getElementById('legLvl').textContent=LVL[w]||'';
+  const list=w==='all'?ALLROOMS:(ROOMS[w]||[]);
+  list.forEach(r=>{
+    const ch=hexS(r.col),d=document.createElement('div');d.className='li';d.id='li-'+r.id;
+    d.innerHTML=`<div class="lc" style="background:${ch}"></div><span class="le">${r.ico}</span><span class="ln">${r.name}</span><span class="lout">${r.prises}🔌</span>`;
+    d.addEventListener('click',()=>showCard(r));
+    el.appendChild(d);
+  });
+}
+buildLegend('rdc');
+
+// ═══════════════════════════════════════════════════
+// UI — CARD
+// ═══════════════════════════════════════════════════
+const card=document.getElementById('card');
+function showCard(r){
+  document.querySelectorAll('.li').forEach(l=>l.classList.remove('active'));
+  const li=document.getElementById('li-'+r.id);if(li){li.classList.add('active');li.scrollIntoView({behavior:'smooth',block:'nearest'})}
+  document.getElementById('cico').textContent=r.ico;
+  document.getElementById('cname').textContent=r.name;
+  document.getElementById('csub').textContent=r.level;
+  document.getElementById('cscore').textContent=r.id;
+  document.getElementById('carea').textContent=r.area;
+  document.getElementById('cdim').textContent=r.dims;
+  document.getElementById('chaut').textContent=r.th.toFixed(2)+' m';
+  document.getElementById('cvolt').textContent=r.volt;
+  document.getElementById('cprise').textContent=r.prises+' prise'+(r.prises>1?'s':'');
+  document.getElementById('cinter').textContent=r.inter+' interrupteur'+(r.inter>1?'s':'');
+  document.getElementById('ccircuit').textContent=r.circuit;
+  document.getElementById('cprot').textContent=r.prot;
+  document.getElementById('cchauf').textContent=r.chauf;
+  document.getElementById('ceclai').textContent=r.ecl;
+  document.getElementById('cequip').textContent=r.equip;
+  const ct=document.getElementById('ctags');ct.innerHTML='';
+  r.tags.forEach(t=>{const d=document.createElement('div');const iv=t.includes('230')||t.includes('32A')||t.includes('TBTS')||t.includes('12V');const ir=t.includes('obligatoire')||t.includes('CO')||t.includes('séparé')||t.includes('ITT');d.className='tag '+(ir?'r':iv?'v':'e');d.textContent=t;ct.appendChild(d)});
+  card.classList.add('show');activeRoom=r.id;
+}
+document.getElementById('xbtn').addEventListener('click',()=>{card.classList.remove('show');activeRoom=null;document.querySelectorAll('.li').forEach(l=>l.classList.remove('active'))});
+
+// Raycasting
+const ray=new THREE.Raycaster(),mp2=new THREE.Vector2();let mmov=false;
+window.addEventListener('mousedown',()=>mmov=false);
+window.addEventListener('mousemove',()=>mmov=true);
+canvas.addEventListener('click',e=>{
+  if(mmov)return;
+  const rc=canvas.getBoundingClientRect();
+  mp2.set(((e.clientX-rc.left)/rc.width)*2-1,-((e.clientY-rc.top)/rc.height)*2+1);
+  ray.setFromCamera(mp2,cam);
+  const hits=ray.intersectObjects(roomMeshes);
+  if(hits.length>0)showCard(hits[0].object.userData);
+});
+
+// ═══════════════════════════════════════════════════
+// FLOOR TABS
+// ═══════════════════════════════════════════════════
+let curFloor='rdc';
+document.querySelectorAll('.ftab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');curFloor=btn.dataset.f;
+    buildRooms(curFloor);buildLegend(curFloor);
+    card.classList.remove('show');activeRoom=null;
+    const yMap={rdc:1.5,ss:-0.4,all:2.0};
+    tgt.y=yMap[curFloor]??1.5;camApply();
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════════════════
+const clock=new THREE.Clock();let t0=0;
+function animate(){
+  requestAnimationFrame(animate);const dt=clock.getDelta();t0+=dt;
+  if(autoRot){sph.t+=dt*0.042;camApply()}
+  // Compass
+  document.querySelector('#compass svg').style.transform=`rotate(${sph.t*180/Math.PI+90}deg)`;
+  // Outlet pulse
+  outMeshes.forEach((m,i)=>{if(m.material.emissiveIntensity!==undefined)m.material.emissiveIntensity=0.22+0.16*Math.sin(t0*1.7+i*0.65)});
+  // Active room highlight
+  roomMeshes.forEach(m=>{
+    if(m.userData&&m.userData.id===activeRoom){
+      if(!m.material.emissive)m.material.emissive=new THREE.Color(0);
+      m.material.emissive.set(m.userData.col);m.material.emissiveIntensity=0.1+0.06*Math.sin(t0*2.2);
+    }else if(m.material.emissive){m.material.emissiveIntensity=0}
+  });
+  renderer.render(scene,cam);
+}
+animate();
+
+// Loading hide
+const lSteps=['Terrain…','Murs extérieurs…','Fenêtres & portes…','Toiture & lucarnes…','Mobilier…','Électricité…','Pièces interactives…','✅ Prêt !'];
+let si=0;const si2=setInterval(()=>{if(++si<lSteps.length)lstep.textContent=lSteps[si];else clearInterval(si2)},220);
+setTimeout(()=>{const ld=document.getElementById('loading');ld.style.opacity='0';setTimeout(()=>ld.style.display='none',680)},1950);
+</script>
+</body>
+</html>
